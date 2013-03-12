@@ -2,7 +2,7 @@
 /**
  *
  * @author SBM
- * @version v2.2013.01.08
+ * @version v2.2013.03.12
  *KISS Is a Stupid System
  * Release Notes
  * =============
@@ -104,19 +104,31 @@ class Kiss{
 		return $this->getData("select rowid,title,postname from post where rowid in (".implode(",",$allid).")  and posttime<{$this->currentTime}");
 	}
 	/**上一篇/下一篇
-	 * 在v2中修正了算法。按照时间排序，更合理。
+	 * Kiss2中修正了算法。按照时间排序，更合理。但是由于排序，可能速度会更慢。如果是直接import的db，建议用Kiss1的getPostsByNeighbor
 	* @param unknown_type $id
 	* @return multitype:mixed Ambigous <mixed, unknown>
 	*/
-	function getPostsByNeighbor($id){
+	function getPostsByNeighbor2($id){
 		$ret=array();
 		$postTime=$this->getLine("select posttime from post where rowid=".intval($id),false);
 		if($postTime){
-			$sql="select rowid,title,tag,description,postname from post where posttime<{$postTime} Limit 1";
+			$sql="select rowid,title,tag,description,postname from post where posttime<{$postTime} order by rowid desc Limit 1";
 			$ret["pre"]=$this->getLine($sql);
 			$sql="select rowid,title,tag,description,postname from post where  posttime>{$postTime} Limit 1";
 			$ret["next"]=$this->getLine($sql);
 		}
+		return $ret;
+	}
+	/**
+	 * Kiss1中的上一篇/下一篇算法。直接按id得到。理论上速度更快，但是如果rowid和posttime不成正比，会不准确。
+	 */
+	function getPostsByNeighbor($id){
+		$ret=array();
+		$id=intval($id);
+		$sql="select rowid,title,tag,description,postname from post where posttime<{$this->currentTime} and rowid=".($id-1);
+		$ret["pre"]=$this->getLine($sql);
+		$sql="select rowid,title,tag,description,postname from post where  posttime<{$this->currentTime} and rowid=".($id+1);
+		$ret["next"]=$this->getLine($sql);
 		return $ret;
 	}
 	/**
